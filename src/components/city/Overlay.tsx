@@ -279,38 +279,118 @@ function ProjectsSection() {
 
 function ServicesSection() {
   const services = [
-    { title: "إدارة الأملاك", desc: "خدمات إدارة متكاملة للحفاظ على قيمة عقاراتك وتعظيم العوائد." },
-    { title: "التطوير العقاري", desc: "بناء وتطوير مجمعات سكنية وتجارية بمواصفات عالمية." },
-    { title: "الاستشارات الهندسية", desc: "تصاميم معمارية فريدة تجمع بين الجمال والعملية." },
-    { title: "الوساطة والاستثمار", desc: "فرص استثمارية مدروسة تضمن لك أفضل العوائد في السوق." },
+    {
+      title: "إدارة الأملاك",
+      desc: "خدمات إدارة متكاملة تشمل صيانة، مراقبة إيفاء المستأجرين، وتحصيل الإيجارات لضمان أقصى عائد على استثماراتك العقارية.",
+      details: "نقدم حلولاً شاملة لإدارة العقارات تشمل الصيانة الدورية، تحسين كفاءة الطاقة، وتوفير تقارير مالية دقيقة تساعدك على اتخاذ قرارات مستنيرة وتحقيق أقصى قيمة استثمارية."
+    },
+    {
+      title: "التطوير العقاري",
+      desc: "نقوم بتصميم وتطوير مشاريع سكنية وتجارية بمستوى عالمي، مع التركيز على الاستدامة واستخدام أحدث تقنيات البناء لتوفير بيئات معيشية متميزة.",
+      details: "من الفكرة إلى التسليم، ندمج التحليل السوقي، التصميم المعماري، وإدارة الإنشاءات لضمان تسليم مشاريع عالية الجودة في المواعيد المحددة وبكفاءة تكلفة."
+    },
+    {
+      title: "الاستشارات الهندسية",
+      desc: "فريق من المهندسين المتخصصين يقدم استشارات دقيقة تشمل التصميم الإنشائي، اختيار المواد، وتحليل التكلفة لتحقيق أعلى كفاءة في التنفيذ.",
+      details: "نساعدك على تحسين أداء المبنى، تقليل مخاطر الفشل الهيكلي، وتطبيق حلول مبتكرة لتقليل الأثر البيئي وزيادة عمر المنشأة."
+    },
+    {
+      title: "الوساطة والاستثمار",
+      desc: "نربط المستثمرين بفرص عقارية مختارة بعناية، مع توفير دراسات جدوى مفصلة وضمان الشفافية في جميع مراحل الصفقة.",
+      details: "نقوم بتحليل عوائد الاستثمار، تقييم المخاطر، وتقديم حلول تمويلية مخصصة لضمان عائد استثماري مستدام ومستقر."
+    },
+    {
+      title: "التصميم الداخلي",
+      desc: "خدمات تصميم داخلي تجمع بين الجمال والوظيفة، تشمل اختيار الأثاث، الإضاءة، والمواد لتخلق مساحات تعكس هوية صاحب العقار.",
+      details: "نستكشف أسلوبك الشخصي ونحوِّل المساحات إلى بيئات ملهمة تجمع بين الراحة والذوق الرفيع، مع مراعاة أعلى معايير الاستدامة."
+    },
+    {
+      title: "إدارة المرافق الذكية",
+      desc: "نطبق حلول تقنية المنزل الذكي لإدارة الطاقة، الأمن، والصيانة عن بُعد، مما يرفع مستوى الراحة ويوفر تكاليف تشغيلية.",
+      details: "من خلال أنظمة IoT المتقدمة، نراقب استهلاك الطاقة، نتحكم في الأنظمة الأمنية، ونوفر صيانة استباقية لتقليل الأعطال وتحسين كفاءة التشغيل."
+    },
+    {
+      title: "التسويق العقاري الرقمي",
+      desc: "استراتيجيات تسويق متكاملة تشمل الحملات على وسائل التواصل، إنشاء جولات افتراضية، وتحسين محركات البحث للوصول إلى جمهور أوسع.",
+      details: "نصمم محتوى مرئي جذاب، نستخدم إعلانات مستهدفة، ونوفر تحليلات دقيقة لقياس أداء الحملات وتحقيق أقصى عائد إعلاني."
+    },
+    {
+      title: "التمويل العقاري",
+      desc: "نساعدك في الحصول على تمويل ملائم عبر شراكات مع بنوك ومؤسسات تمويل خاصة، مع تقديم استشارات حول هيكل القروض وشروط السداد.",
+      details: "نقارن بين خيارات التمويل المختلفة، نفاوض على أسعار الفائدة، ونرشدك خلال عملية تقديم الطلب لضمان شروط تمويلية مواتية."
+    }
   ];
+
+  const [selected, setSelected] = useState<number | null>(null);
+
   return (
-    <section id="services" className="py-16 md:py-24 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-primary/10 scroll-mt-20">
-      <div className="mb-10 md:mb-16 text-center">
-        <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 md:mb-4 uppercase tracking-widest neon-text">
-          خدماتنا العقارية
-        </h2>
-        <p className="font-mono text-xs sm:text-sm text-foreground/60 max-w-2xl mx-auto leading-relaxed">
-          نقدم حلولاً متكاملة تلبي تطلعاتك الاستثمارية والسكنية.
-        </p>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        {services.map((s, i) => (
-          <div
-            key={i}
-            className="glass p-4 md:p-6 rounded-lg border border-primary/20 hover:border-primary/60 transition-colors group"
-          >
-            <div className="text-primary font-mono text-lg md:text-xl mb-3 md:mb-4 group-hover:scale-110 transition-transform inline-block">
-              0{i + 1}//
+    <>
+      {/* Services Grid */}
+      <section id="services" className="py-16 md:py-24 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-primary/10 scroll-mt-20">
+        <div className="mb-10 md:mb-16 text-center">
+          <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 md:mb-4 uppercase tracking-widest neon-text">
+            خدماتنا العقارية
+          </h2>
+          <p className="font-mono text-xs sm:text-sm text-foreground/60 max-w-2xl mx-auto leading-relaxed">
+            نقدم حلولاً متكاملة تلبي تطلعاتك الاستثمارية والسكنية.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          {services.map((s, i) => (
+            <div
+              key={i}
+              className="relative bg-white/5 backdrop-blur-lg border border-primary/20 rounded-xl p-5 cursor-pointer hover:border-primary/60 transition-colors group"
+              onClick={() => setSelected(i)}
+            >
+              <div className="text-primary font-mono text-lg md:text-xl mb-3 md:mb-4 group-hover:scale-110 transition-transform inline-block">
+                0{i + 1}//
+              </div>
+              <h3 className="font-mono text-base md:text-lg font-bold text-white mb-1 md:mb-2">
+                {s.title}
+              </h3>
+              <p className="font-mono text-[11px] md:text-xs text-foreground/60 leading-relaxed line-clamp-3">
+                {s.desc}
+              </p>
             </div>
-            <h3 className="font-mono text-base md:text-lg font-bold text-white mb-1 md:mb-2">{s.title}</h3>
-            <p className="font-mono text-[11px] md:text-xs text-foreground/60 leading-relaxed">{s.desc}</p>
+          ))}
+        </div>
+      </section>
+
+      {/* Modal Detail */}
+      {selected !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 p-6 max-w-md mx-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold text-white mb-2">
+              {services[selected].title}
+            </h3>
+            <p className="text-white/80 mb-4">
+              {services[selected].desc}
+            </p>
+            <p className="text-white/70 mb-4">
+              {services[selected].details}
+            </p>
+            <button
+              className="mt-4 px-4 py-2 bg-primary/30 hover:bg-primary/50 text-primary rounded"
+              onClick={() => setSelected(null)}
+            >
+              إغلاق
+            </button>
           </div>
-        ))}
-      </div>
-    </section>
+        </div>
+      )}
+    </>
   );
 }
+
+
+
+
 
 function ContactSection() {
   return (
