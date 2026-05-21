@@ -34,6 +34,12 @@
   --font-mono: var(--font-mono);
 }
 
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
 :root {
   --radius: 0.5rem;
   /* Monochrome / Grayscale palette */

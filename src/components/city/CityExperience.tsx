@@ -5,16 +5,17 @@ const CityScene = lazy(() => import("./CityScene"));
 
 export default function CityExperience() {
   const scrollRef = useRef(0);
+  const lookRef = useRef(0);
 
   return (
     <div className="fixed inset-0 bg-background text-foreground overflow-hidden">
       <div className="absolute inset-0 z-0">
         <Suspense fallback={<LoadingScreen />}>
-          <CityScene scrollRef={scrollRef} />
+          <CityScene scrollRef={scrollRef} lookRef={lookRef} />
         </Suspense>
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,oklch(0.08_0.04_260/_0.7)_100%)]" />
       </div>
-      <Overlay scrollRef={scrollRef} />
+      <Overlay scrollRef={scrollRef} lookRef={lookRef} />
     </div>
   );
 }

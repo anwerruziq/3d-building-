@@ -97,8 +97,10 @@ function NavBar() {
 
 export default function Overlay({
   scrollRef,
+  lookRef,
 }: {
   scrollRef: React.MutableRefObject<number>;
+  lookRef: React.MutableRefObject<number>;
 }) {
   const [progress, setProgress] = useState(0);
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -133,15 +135,105 @@ export default function Overlay({
       }
     };
     el.addEventListener("scroll", onScroll, { passive: true });
+    
+    // Custom Touch Controls for Mobile
+    let isTouch = false;
+    let lastY = 0;
+    let lastX = 0;
+    let velocityY = 0;
+    let velocityX = 0;
+    let lastTime = 0;
+    let rafId: number | null = null;
+
+    const updateControls = (dy: number, dx: number) => {
+      // dy > 0 (swipe down) -> move forward -> increase progress
+      // dy < 0 (swipe up) -> move backward -> decrease progress
+      const tourHeight = SECTIONS.length * el.clientHeight;
+      if (tourHeight <= 0) return;
+      
+      const progressDelta = dy * 0.0015;
+      let newP = scrollRef.current + progressDelta;
+      newP = Math.max(0, Math.min(1, newP));
+      
+      scrollRef.current = newP;
+      setProgress(newP);
+      el.scrollTop = newP * tourHeight;
+
+      // Horizontal Look
+      const lookDelta = -dx * 0.005;
+      let newLook = lookRef.current + lookDelta;
+      newLook = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, newLook));
+      lookRef.current = newLook;
+    };
+
+    const applyInertia = () => {
+      if (!isTouch && (Math.abs(velocityY) > 0.1 || Math.abs(velocityX) > 0.1)) {
+        // Only apply inertia to vertical movement (progress), not look
+        updateControls(velocityY * 16, 0);
+        velocityY *= 0.90;
+        rafId = requestAnimationFrame(applyInertia);
+      }
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (window.innerWidth > 768) return;
+      const tourHeight = SECTIONS.length * el.clientHeight;
+      if (el.scrollTop >= tourHeight) return; // allow native scroll for footer
+
+      isTouch = true;
+      if (rafId) cancelAnimationFrame(rafId);
+      lastY = e.touches[0].clientY;
+      lastX = e.touches[0].clientX;
+      lastTime = performance.now();
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isTouch || window.innerWidth > 768) return;
+      
+      // Prevent native scroll
+      if (e.cancelable) e.preventDefault();
+      
+      const now = performance.now();
+      const dt = Math.max(1, now - lastTime);
+      const touch = e.touches[0];
+      const dy = touch.clientY - lastY;
+      const dx = touch.clientX - lastX;
+      
+      velocityY = dy / dt;
+      velocityX = dx / dt;
+      
+      updateControls(dy, dx);
+      
+      lastY = touch.clientY;
+      lastX = touch.clientX;
+      lastTime = now;
+    };
+
+    const handleTouchEnd = () => {
+      isTouch = false;
+      // Snap back to front immediately when finger is released
+      lookRef.current = 0;
+      rafId = requestAnimationFrame(applyInertia);
+    };
+
+    el.addEventListener("touchstart", handleTouchStart, { passive: false });
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+    el.addEventListener("touchend", handleTouchEnd);
+
     setTimeout(() => {
       setIntroVisible(true);
       setTimeout(() => setIntroAnimated(true), 80);
     }, 300);
+    
     return () => {
       el.removeEventListener("scroll", onScroll);
+      el.removeEventListener("touchstart", handleTouchStart);
+      el.removeEventListener("touchmove", handleTouchMove);
+      el.removeEventListener("touchend", handleTouchEnd);
       if (idleTimer.current) clearTimeout(idleTimer.current);
+      if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [scrollRef]);
+  }, [scrollRef, lookRef]);
 
   return (
     <>
@@ -201,7 +293,7 @@ export default function Overlay({
       </div>
 
       {/* Scrollable layer */}
-      <div ref={scrollerRef} className="fixed inset-0 z-10 overflow-y-scroll overflow-x-hidden pt-20">
+      <div ref={scrollerRef} className="fixed inset-0 z-10 overflow-y-scroll overflow-x-hidden pt-20 overscroll-y-none" style={{ WebkitOverflowScrolling: "touch" }}>
         {SECTIONS.map((s, i) => (
           <div key={i} className="h-screen w-full pointer-events-none" />
         ))}
