@@ -1,5 +1,268 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SECTIONS } from "./CityScene";
+
+// ─── Mobile Joystick ────────────────────────────────────────────────────────
+function MobileJoystick({
+  scrollRef,
+  lookRef,
+}: {
+  scrollRef: React.MutableRefObject<number>;
+  lookRef: React.MutableRefObject<number>;
+}) {
+  const baseRef = useRef<HTMLDivElement>(null);
+  const knobRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef(false);
+  const originRef = useRef({ x: 0, y: 0 });
+  const rafRef = useRef<number | null>(null);
+  const axisRef = useRef({ x: 0, y: 0 });
+  const [active, setActive] = useState(false);
+
+  // Continuously apply movement while joystick is held
+  const tick = useCallback(() => {
+    const { x, y } = axisRef.current;
+    // Ultra‑tight deadzone for instant response
+    if (Math.abs(x) > 0.005 || Math.abs(y) > 0.005) {
+      // Vertical axis: move along path (negative y = forward)
+      // Higher sensitivity for blazing‑fast progress
+      const progressDelta = y * 0.006;
+      let newP = scrollRef.current + progressDelta;
+      newP = Math.max(0, Math.min(1, newP));
+      scrollRef.current = newP;
+
+      // Horizontal axis: rotate camera look
+      // Higher sensitivity for rapid yaw (reversed direction)
+      const lookDelta = -x * 0.06;
+      let newLook = lookRef.current + lookDelta;
+      newLook = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, newLook));
+      lookRef.current = newLook;
+    }
+    rafRef.current = requestAnimationFrame(tick);
+  }, [scrollRef, lookRef]);
+
+  const startTick = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(tick);
+  }, [tick]);
+
+  const stopTick = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
+
+  const handleStart = useCallback((clientX: number, clientY: number) => {
+    const base = baseRef.current;
+    if (!base) return;
+    const rect = base.getBoundingClientRect();
+    originRef.current = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+    activeRef.current = true;
+    setActive(true);
+    startTick();
+  }, [startTick]);
+
+  const handleMove = useCallback((clientX: number, clientY: number) => {
+    if (!activeRef.current || !knobRef.current) return;
+    const RADIUS = 36;
+    let dx = clientX - originRef.current.x;
+    let dy = clientY - originRef.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > RADIUS) {
+      const scale = RADIUS / dist;
+      dx *= scale;
+      dy *= scale;
+    }
+    // Normalise to -1..1
+    axisRef.current = { x: dx / RADIUS, y: dy / RADIUS };
+    knobRef.current.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  }, []);
+
+  const handleEnd = useCallback(() => {
+    activeRef.current = false;
+    setActive(false);
+    axisRef.current = { x: 0, y: 0 };
+    stopTick();
+    if (knobRef.current) {
+      knobRef.current.style.transform = "translate(-50%, -50%)";
+    }
+    // Snap look back to center
+    lookRef.current = 0;
+  }, [stopTick, lookRef]);
+
+  useEffect(() => {
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    const onTouchEnd = () => handleEnd();
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("touchcancel", onTouchEnd);
+    return () => {
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
+      stopTick();
+    };
+  }, [handleMove, handleEnd, stopTick]);
+
+  // Global swipe handling for whole screen (moves forward on swipe down)
+  useEffect(() => {
+    let startY = 0;
+    let active = false;
+    const handleStart = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length === 1) {
+        startY = e.touches[0].clientY;
+        active = true;
+      }
+    };
+    const handleMove = (e: TouchEvent) => {
+      e.preventDefault();
+      if (!active) return;
+      const currentY = e.touches[0].clientY;
+      const dy = currentY - startY; // positive = swipe down
+      if (Math.abs(dy) > 2) {
+        const progressDelta = -dy * 0.006; // inverted: swipe down moves backward
+        let newP = scrollRef.current + progressDelta;
+        newP = Math.max(0, Math.min(1, newP));
+        scrollRef.current = newP;
+        startY = currentY; // reset base for smooth continuous movement
+      }
+    };
+    const handleEnd = () => {
+      active = false;
+    };
+    window.addEventListener('touchstart', handleStart, { passive: false });
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleEnd);
+    window.addEventListener('touchcancel', handleEnd);
+    return () => {
+      window.removeEventListener('touchstart', handleStart);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleEnd);
+      window.removeEventListener('touchcancel', handleEnd);
+    };
+  }, [scrollRef]);
+
+  return (
+    <div
+      className="md:hidden"
+      style={{
+        position: "fixed",
+        bottom: "28px",
+        left: "28px",
+        zIndex: 30,
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        touchAction: "none",
+      }}
+    >
+      {/* Outer ring / base */}
+      <div
+        ref={baseRef}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          handleStart(e.touches[0].clientX, e.touches[0].clientY);
+        }}
+        style={{
+          width: 100,
+          height: 100,
+          borderRadius: "50%",
+          background: active
+            ? "rgba(191,161,95,0.15)"
+            : "rgba(255,255,255,0.06)",
+          border: active
+            ? "2px solid rgba(191,161,95,0.7)"
+            : "2px solid rgba(191,161,95,0.3)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          boxShadow: active
+            ? "0 0 24px rgba(191,161,95,0.4), inset 0 0 20px rgba(191,161,95,0.08)"
+            : "0 0 12px rgba(191,161,95,0.1), inset 0 0 10px rgba(0,0,0,0.2)",
+          position: "relative",
+          transition: "background 0.2s, border 0.2s, box-shadow 0.2s",
+          cursor: "pointer",
+        }}
+      >
+        {/* Cross guides */}
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: "none",
+        }}>
+          <div style={{ width: "60%", height: 1, background: "rgba(191,161,95,0.25)", position: "absolute" }} />
+          <div style={{ width: 1, height: "60%", background: "rgba(191,161,95,0.25)", position: "absolute" }} />
+        </div>
+
+        {/* Directional arrows */}
+        {["top", "bottom", "left", "right"].map((dir) => (
+          <div
+            key={dir}
+            style={{
+              position: "absolute",
+              ...(dir === "top" ? { top: 8, left: "50%", transform: "translateX(-50%)" } : {}),
+              ...(dir === "bottom" ? { bottom: 8, left: "50%", transform: "translateX(-50%)" } : {}),
+              ...(dir === "left" ? { left: 8, top: "50%", transform: "translateY(-50%)" } : {}),
+              ...(dir === "right" ? { right: 8, top: "50%", transform: "translateY(-50%)" } : {}),
+              width: 0,
+              height: 0,
+              opacity: 0.35,
+              borderTop: dir === "bottom" ? "5px solid rgba(191,161,95,0.8)" : "5px solid transparent",
+              borderBottom: dir === "top" ? "5px solid rgba(191,161,95,0.8)" : "5px solid transparent",
+              borderLeft: dir === "right" ? "5px solid rgba(191,161,95,0.8)" : "5px solid transparent",
+              borderRight: dir === "left" ? "5px solid rgba(191,161,95,0.8)" : "5px solid transparent",
+            }}
+          />
+        ))}
+
+        {/* Knob */}
+        <div
+          ref={knobRef}
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 38,
+            height: 38,
+            borderRadius: "50%",
+            background: active
+              ? "radial-gradient(circle at 35% 35%, rgba(255,230,150,0.95), rgba(191,161,95,0.85))"
+              : "radial-gradient(circle at 35% 35%, rgba(255,220,130,0.7), rgba(191,161,95,0.5))",
+            border: "1.5px solid rgba(255,220,130,0.6)",
+            boxShadow: active
+              ? "0 0 16px rgba(191,161,95,0.8), 0 2px 8px rgba(0,0,0,0.5)"
+              : "0 0 8px rgba(191,161,95,0.4), 0 2px 6px rgba(0,0,0,0.4)",
+            transition: activeRef.current ? "none" : "transform 0.25s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s",
+            pointerEvents: "none",
+          }}
+        />
+      </div>
+
+      {/* Label */}
+      <div style={{
+        textAlign: "center",
+        marginTop: 6,
+        fontFamily: "monospace",
+        fontSize: 9,
+        letterSpacing: "0.15em",
+        color: "rgba(191,161,95,0.6)",
+        textTransform: "uppercase",
+        userSelect: "none",
+      }}>
+        تحريك
+      </div>
+    </div>
+  );
+}
+
 
 function NavBar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -238,6 +501,7 @@ export default function Overlay({
   return (
     <>
       <NavBar />
+      <MobileJoystick scrollRef={scrollRef} lookRef={lookRef} />
 
       {/* Intro Company Name */}
       <div
