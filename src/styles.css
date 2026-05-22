@@ -32,6 +32,7 @@
   --color-ember: var(--ember);
   --font-display: var(--font-display);
   --font-mono: var(--font-mono);
+  --font-handwriting: var(--font-handwriting);
 }
 
 html, body, #root {
@@ -73,6 +74,7 @@ html, body, #root {
   --ember: oklch(0.65 0 0);
   --font-display: "Cairo", "Orbitron", "Space Grotesk", system-ui, sans-serif;
   --font-mono: "Cairo", "JetBrains Mono", ui-monospace, monospace;
+  --font-handwriting: "Aref Ruqaa", serif;
 }
 
 .dark { color-scheme: dark; }

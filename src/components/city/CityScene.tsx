@@ -84,11 +84,11 @@ export const WAYPOINTS: [number, number, number][] = [
 ];
 
 export const SECTIONS = [
-  { eyebrow: "المرحلة ٠١", title: "المخطط\nالعام", body: "رؤية هندسية تتجاوز التوقعات.\nمرر لاستكشاف المشروع.", color: "#ffffff", waypoint: 0, image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80" },
-  { eyebrow: "المرحلة ٠٢ · السكني", title: "مناطق\nسكنية", body: "فلل وقصور فاخرة · تصاميم عصرية\nإطلالات بانورامية خلابة.", color: "#cccccc", waypoint: 2, image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80" },
-  { eyebrow: "المرحلة ٠٣ · التجاري", title: "المركز\nالتجاري", body: "مساحات مكتبية · مراكز تسوق عالمية\nبيئة أعمال متكاملة.", color: "#e0e0e0", waypoint: 4, offset: [-15, 0, 0], image: "https://images.unsplash.com/photo-1535868463750-c78d9543614f?auto=format&fit=crop&w=800&q=80" },
-  { eyebrow: "المرحلة ٠٤ · المرافق", title: "مرافق\nوترفيه", body: "مساحات خضراء شاسعة · نوادي صحية\nحياة متكاملة ورفاهية.", color: "#b3b3b3", waypoint: 6, image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80" },
-  { eyebrow: "المرحلة ٠٥ · الاستثمار", title: "قلب\nالمشروع", body: "وجهتك الاستثمارية الأفضل\nعائد استثماري مضمون.", color: "#ffffff", waypoint: 8, image: "https://images.unsplash.com/photo-1517581177682-a085bb7ffb15?auto=format&fit=crop&w=800&q=80" },
+  { eyebrow: "المرحلة ٠١ · التخطيط", title: "التصميم\nوالتخطيط", body: "أساس قوي لنجاح مشروعك.\nمرر للتعرف على مراحل التنفيذ.", color: "#ffffff", waypoint: 0, image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80" },
+  { eyebrow: "تاريخنا · الأفق للمقاولات", eyebrowColor: "#111111", eyebrowSize: 0.95, title: "من\nنحن", body: "تأسست الشركة لتقديم حلول إنشائية\nمتطورة، بخبرة تمتد لأكثر من ٢٠ عاماً.", color: "#cccccc", waypoint: 2, image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80" },
+  { eyebrow: "المرحلة ٠٣ · البناء", title: "الهيكل\nالإنشائي", body: "صب الخرسانات والحديد المسلح\nبأعلى المواصفات القياسية.", color: "#e0e0e0", waypoint: 4, offset: [-15, 0, 0], image: "https://images.unsplash.com/photo-1535868463750-c78d9543614f?auto=format&fit=crop&w=800&q=80" },
+  { eyebrow: "المرحلة ٠٤ · التنفيذ", title: "أعمال\nالتشطيبات", body: "واجهات عصرية وديكورات\nداخلية تنبض بالفخامة.", color: "#b3b3b3", waypoint: 6, image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80" },
+  { isStats: true, color: "#ffffff", waypoint: 8, image: "https://images.unsplash.com/photo-1517581177682-a085bb7ffb15?auto=format&fit=crop&w=800&q=80" },
 ];
 
 export type MoveState = { forward: number; strafe: number; up: number; boost: boolean };
@@ -223,9 +223,34 @@ function Waypoints({ points }: { points: THREE.Vector3[] }) {
 }
 
 // ---------- AnimatedBillboard ----------
+function CounterText({ target, position, label, suffix, start }: any) {
+  const [val, setVal] = useState(0);
+  const valRef = useRef(0);
+  
+  useFrame((_, delta) => {
+    if (start && valRef.current < target) {
+       valRef.current = THREE.MathUtils.damp(valRef.current, target, 2, delta);
+       if (Math.abs(target - valRef.current) < 0.5) valRef.current = target;
+       setVal(Math.floor(valRef.current));
+    }
+  });
+
+  return (
+    <group position={position}>
+      <Text font="/fonts/Cairo-Bold.ttf" fontSize={2.2} color="#ffffff" anchorX="center" anchorY="bottom" fontWeight={900}>
+        {val}{suffix}
+      </Text>
+      <Text font="/fonts/Cairo-Bold.ttf" position={[0, -0.8, 0]} fontSize={0.8} color="#ffffff" anchorX="center" anchorY="top" fontWeight={700} textAlign="center" lineHeight={1.4}>
+        {label}
+      </Text>
+    </group>
+  );
+}
+
 function AnimatedBillboard({ s, idx, p }: { s: any; idx: number; p: THREE.Vector3 }) {
   const ref = useRef<THREE.Group>(null);
   const { camera } = useThree();
+  const [inView, setInView] = useState(false);
 
   const actualP = useMemo(() => {
     if (!s.offset) return p;
@@ -243,7 +268,35 @@ function AnimatedBillboard({ s, idx, p }: { s: any; idx: number; p: THREE.Vector
     }
     const newScale = THREE.MathUtils.damp(ref.current.scale.x, targetScale, 6, delta);
     ref.current.scale.setScalar(newScale);
+
+    if (dist < 120 && !inView) setInView(true);
   });
+
+  if (s.isStats) {
+    return (
+      <Billboard position={[actualP.x, actualP.y + 11, actualP.z]} follow>
+        <group ref={ref} scale={0.001}>
+          {/* Background overlay covering the whole 26x12 plane */}
+          <mesh position={[0, 0, 0]}>
+            <planeGeometry args={[26, 12]} />
+            <meshBasicMaterial color="#0f2038" />
+          </mesh>
+          {s.image && <Image url={s.image} position={[0, 0, 0.01]} scale={[26, 12]} transparent opacity={0.3} />}
+          <mesh position={[0, 0, 0.02]}>
+            <planeGeometry args={[26, 12]} />
+            <meshBasicMaterial color="#1a3b6c" transparent opacity={0.6} />
+          </mesh>
+          
+          <CounterText target={100} suffix=" +" label="مشروع منجز" position={[-9, 0, 0.05]} start={inView} />
+          <CounterText target={50} suffix=" +" label="مشروع قيد الانتاج" position={[-3, 0, 0.05]} start={inView} />
+          <CounterText target={100} suffix=" +" label="عميل" position={[3, 0, 0.05]} start={inView} />
+          <CounterText target={20} suffix=" +" label="سنة خبرة" position={[9, 0, 0.05]} start={inView} />
+          
+          <pointLight color={s.color} intensity={5} distance={40} position={[0, 0, 2]} />
+        </group>
+      </Billboard>
+    );
+  }
 
   return (
     <Billboard position={[actualP.x, actualP.y + 11, actualP.z]} follow>
@@ -273,7 +326,7 @@ function AnimatedBillboard({ s, idx, p }: { s: any; idx: number; p: THREE.Vector
           </group>
         )}
         {/* Text */}
-        <Text font="/fonts/Cairo-Bold.ttf" position={[12, 4.5, 0.05]} fontSize={0.7} color="#bfa15f" anchorX="right" anchorY="top" letterSpacing={0.05} fontWeight={700}>
+        <Text font="/fonts/Cairo-Bold.ttf" position={[12, 4.5, 0.05]} fontSize={s.eyebrowSize || 0.7} color={s.eyebrowColor || "#bfa15f"} anchorX="right" anchorY="top" letterSpacing={0.05} fontWeight={700}>
           {s.eyebrow}
         </Text>
         <Text font="/fonts/Cairo-Bold.ttf" position={[12, 2.5, 0.05]} fontSize={2} color="#000000" anchorX="right" anchorY="top" maxWidth={16} lineHeight={1.2} fontWeight={900}>
@@ -397,7 +450,7 @@ function Drones() {
 function Atmosphere() {
   const { scene } = useThree();
   useEffect(() => {
-    const color = new THREE.Color("#0a1230");
+    const color = new THREE.Color("#87CEEB"); // Daylight sky blue
     scene.background = color;
     scene.fog = new THREE.FogExp2(color.getHex(), 0.0015);
   }, [scene]);
@@ -459,7 +512,7 @@ export default function CityScene({
           />
           <Drones />
           <Sparkles count={120} scale={[400, 120, 400]} size={2} speed={0.2} opacity={0.6} color="#ffd08a" />
-          <Stars radius={400} depth={80} count={1200} factor={3} fade speed={0.4} />
+          {/* Stars disabled for daylight */}
           <Environment preset="night" />
           <Preload all />
         </Suspense>

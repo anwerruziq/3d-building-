@@ -74,7 +74,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "الأفق العقارية" },
       { name: "description", content: "شريكك الموثوق في التطوير العقاري" },
-      { name: "author", content: "Horizon Estates" },
+      { name: "author", content: "Al Ofoq Real Estate" },
       { property: "og:title", content: "الأفق العقارية" },
       { property: "og:description", content: "شريكك الموثوق في التطوير العقاري" },
       { property: "og:type", content: "website" },
